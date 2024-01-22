@@ -1,6 +1,6 @@
 import { AppActions, IAppState } from "../App/IApp";
 
-export default (state: IAppState, action: AppActions) => {
+export default (state: IAppState, action: AppActions): IAppState => {
   switch (action.type) {
     case "JOINED":
       return {
@@ -14,10 +14,16 @@ export default (state: IAppState, action: AppActions) => {
         ...state,
         users: action.payload,
       };
-    case "SET_MESSAGES":
+    case "NEW_MESSAGE":
       return {
         ...state,
-        messages: action.payload,
+        messages: [...state.messages, action.payload],
+      };
+    case "SET_DATA":
+      return {
+        ...state,
+        messages: action.payload.messages,
+        users: action.payload.users,
       };
     default:
       return state;

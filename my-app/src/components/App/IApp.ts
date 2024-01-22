@@ -1,7 +1,8 @@
 export enum IAppActionTypes {
   JOINED = "JOINED",
   SET_USERS = "SET_USERS",
-  SET_MESSAGES = "SET_MESSAGES",
+  NEW_MESSAGE = "NEW_MESSAGE",
+  SET_DATA = "SET_DATA",
 }
 
 type JOINED = {
@@ -14,17 +15,27 @@ type SET_USERS = {
   payload: string[];
 };
 
-type SET_MESSAGES = {
-  type: IAppActionTypes.SET_MESSAGES;
-  payload: string[];
+type NEW_MESSAGE = {
+  type: IAppActionTypes.NEW_MESSAGE;
+  payload: IAppMessage;
 };
 
-export type AppActions = JOINED | SET_USERS | SET_MESSAGES;
+type SET_DATA = {
+  type: IAppActionTypes.SET_DATA;
+  payload: { users: string[]; messages: IAppMessage[] };
+};
 
-export interface IAppState {
+export type AppActions = JOINED | SET_USERS | NEW_MESSAGE | SET_DATA;
+
+export type IAppState = {
   joined: boolean;
   roomId: null | string;
   userName: null | string;
   users: string[];
-  messages: string[];
+  messages: IAppMessage[];
+};
+
+export interface IAppMessage {
+  userName: string;
+  text: string;
 }
