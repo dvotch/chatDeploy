@@ -1,6 +1,7 @@
 import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
+import { addUser } from "./src/Entities/Users.js";
 
 const app = express();
 const server = createServer(app);
@@ -15,43 +16,17 @@ app.use(express.json());
 
 const rooms = new Map();
 
-app.get("/api/rooms/:id", (req, res) => {
-  const roomId = req.params.id;
-  const obj = rooms.has(roomId)
-    ? {
-        users: [...rooms.get(roomId).get("users").values()],
-        messages: [...rooms.get(roomId).get("messages").values()],
-      }
-    : { users: [], messages: [] };
-  res.json(obj);
-});
-
-app.post("/api/rooms", (req, res) => {
-  const { roomId, userName } = req.body;
-  if (!rooms.has(roomId)) {
-    rooms.set(
-      roomId,
-      new Map([
-        ["users", new Map([])],
-        ["messages", []],
-      ])
-    );
-  }
-  res.json();
-});
-
 io.on("connection", (socket) => {
-  socket.on("ROOM:JOIN", ({ roomId, userName }) => {
-    socket.join(roomId);
-    rooms.get(roomId).get("users").set(socket.id, userName);
-    const users = [...rooms.get(roomId).get("users").values()];
-    socket.to(roomId).emit("ROOM:SET_USERS", users);
-  });
+  socket.on("ROOM:JOIN", ({ room, username }) => {
+    socket.join(room);
+    const { user, isExist } = addUser({ room, username });
+    socket.emit("ROOM:MESSAGE", {
+      data: { user: { username: "Admin" }, message: `Hey my love ${username}` },
+    });
 
-  socket.on("ROOM:NEW_MESSAGE", ({ roomId, userName, text }) => {
-    const req = { userName, text };
-    rooms.get(roomId).get("messages").push(req);
-    socket.to(roomId).emit("ROOM:NEW_MESSAGE", req);
+    socket.broadcast.to(user.room).emit("ROOM:MESSAGE", {
+      data: { user: { username: "Admin" }, message: `${username} has join` },
+    });
   });
 
   socket.on("disconnect", () => {
@@ -64,9 +39,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, (error) => {
-  if (error) {
-    throw Error(error);
-  }
+server.listen(3000, () => {
   console.log("Сервер запущен");
 });

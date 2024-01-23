@@ -1,72 +1,55 @@
 import * as React from "react";
-import { IAppState } from "../App/IApp";
+import reducer from "../JoinBlock/reducer";
+import { IAppActionTypes, IAppMessage, IAppState } from "../App/IApp";
 import socket from "../../socket";
+import { useLocation } from "react-router-dom";
+import { IMessage, IUseLocation } from "./IChat";
+import { IUser } from "../../Entities/IUsers";
 
-export interface IChatProps {
-  state: IAppState;
-  onAddMessage: Function;
-}
+export interface IChatProps {}
 
 export default function Chat(props: IChatProps) {
-  const [messageValue, setMessageValue] = React.useState("");
-  const messagesRef = React.useRef<HTMLDivElement>(null);
+  const [state, setState] = React.useState<IMessage[]>([]);
+  const { search } = useLocation();
+  const [params, setParams] = React.useState<IUseLocation>();
 
   React.useEffect(() => {
-    messagesRef.current!.scrollTo(0, 99999);
-  }, [props.state.messages]);
+    const searchParams = Object.fromEntries(
+      new URLSearchParams(search)
+    ) as IUseLocation;
+    setParams(searchParams);
+    socket.emit("ROOM:JOIN", searchParams);
+  }, [search]);
 
-  const onSendMessage = () => {
-    if (messageValue) {
-      socket.emit("ROOM:NEW_MESSAGE", {
-        userName: props.state.userName,
-        text: messageValue,
-        roomId: props.state.roomId,
-      });
-      props.onAddMessage({
-        userName: props.state.userName,
-        text: messageValue,
-      });
-      setMessageValue("");
-    }
-  };
+  React.useEffect(() => {
+    socket.on("ROOM:MESSAGE", (data: IMessage) => {
+      setState((_state) => [..._state, data]);
+    });
+  }, []);
+
+  console.log(state);
 
   return (
     <div className="flex align-center w-1/2 h-1/2 border-2 font-sans">
       <div className="flex flex-col w-1/4 bg-gray-200 p-2 gap-1 ">
         <h1 className="font-bold border-b-2 border-black">
-          Комната: {props.state.roomId}
+          Комната:{params?.room}
         </h1>
-        <h2 className="font-medium">Users ({props.state.users.length}):</h2>
-        {props.state.users.map((user) => (
-          <li className="p-1 indent-2 font-medium bg-white rounded-sm list-none">
-            {user}
-          </li>
-        ))}
+        <h2 className="font-medium">Users :</h2>
       </div>
       <div className="flex flex-col w-3/4 p-4 gap-2">
-        <div
-          className="flex flex-col h-4/6 gap-2 border-b-2 overflow-auto"
-          ref={messagesRef}
-        >
-          {props.state.messages.map((message) => (
+        <div className="flex flex-col h-4/6 gap-2 border-b-2 overflow-auto">
+          {state.map((date) => (
             <div>
-              <span className=" p-2 rounded-md bg-indigo-400 text-white inline-flex text-lg">
-                {message.text}
+              <span className="inline-flex p-2 bg-indigo-200">
+                {date.data.message}
               </span>
-              <p className="text-gray-400">{message.userName}</p>
+              <p className="">{date.data.user.username}</p>
             </div>
           ))}
         </div>
-        <textarea
-          className="h-1/6 border-2"
-          rows={3}
-          value={messageValue}
-          onChange={(e) => setMessageValue(e.target.value)}
-        ></textarea>
-        <button
-          className="flex align-center justify-center text-white bg-blue-600 w-1/5 p-2"
-          onClick={onSendMessage}
-        >
+        <textarea className="h-1/6 border-2" rows={3}></textarea>
+        <button className="flex align-center justify-center text-white bg-blue-600 w-1/5 p-2">
           Send
         </button>
       </div>
