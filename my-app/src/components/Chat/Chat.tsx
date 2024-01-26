@@ -1,10 +1,7 @@
 import * as React from "react";
-import reducer from "../JoinBlock/reducer";
-import { IAppActionTypes, IAppMessage, IAppState } from "../App/IApp";
 import socket from "../../socket";
 import { useLocation } from "react-router-dom";
 import { IMessage, IUseLocation } from "./IChat";
-import { IUser } from "../../Entities/IUsers";
 
 export interface IChatProps {}
 
